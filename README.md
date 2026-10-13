@@ -3,6 +3,10 @@
 > DSH（DeepSeek Harness）Web 端**会话整理**插件：标签分类 · 归档 / 恢复 · 已归档浏览。
 > Organize your DSH Web sessions: tag-based grouping, archive & restore, and an archived-session browser.
 
+[![Awesome DSH Plugin](https://beancookie.github.io/awesome-dsh-plugin/badge.svg)](https://beancookie.github.io/awesome-dsh-plugin)
+[![npm version](https://img.shields.io/npm/v/dsh-workspace-organizer.svg)](https://www.npmjs.com/package/dsh-workspace-organizer)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 DSH 自带的工作区视图只能按「目录」分组、组内只能排序，会话一多就堆在一起。
 本插件为会话区补上一层**自定义分类维度**和**归档管理面板**，并且归档状态与 DSH 原生的
 归档体系完全同源——操作后侧边栏会实时联动，没有 hack。
