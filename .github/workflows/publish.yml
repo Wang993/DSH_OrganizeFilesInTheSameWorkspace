@@ -41,13 +41,21 @@ jobs:
       - name: Upgrade npm for OIDC support
         run: npm install -g npm@latest
 
-      # 走 OIDC 时清掉 .npmrc 里可能残留的 _authToken，让 npm 用 OIDC 换临时凭证
-      - name: Clean .npmrc for OIDC
+      # 认证准备：配了 NPM_TOKEN 就用它；没配则清掉 .npmrc 里的空 token 行，走 OIDC。
+      # 注意：不能无条件删 _authToken 行——setup-node 写的正是
+      # `//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}`，无条件删会让 token 失效。
+      - name: Configure npm authentication
         run: |
-          if [ -n "$NPM_CONFIG_USERCONFIG" ] && [ -f "$NPM_CONFIG_USERCONFIG" ]; then
-            echo "Stripping _authToken from .npmrc for OIDC..."
-            sed -i '/_authToken/d' "$NPM_CONFIG_USERCONFIG"
+          if [ -n "${NODE_AUTH_TOKEN:-}" ]; then
+            echo "使用 NPM_TOKEN 发布"
+          else
+            echo "未提供 NPM_TOKEN —— 走 OIDC Trusted Publishing"
+            if [ -n "$NPM_CONFIG_USERCONFIG" ] && [ -f "$NPM_CONFIG_USERCONFIG" ]; then
+              sed -i '/_authToken/d' "$NPM_CONFIG_USERCONFIG"
+            fi
           fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       # 发布前的轻量闸门：两个脚本文件必须语法正确
       - name: Syntax gate
