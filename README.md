@@ -111,15 +111,36 @@ node --check lib/organizer.js   # 客户端脚本语法校验
 
 4. GitHub Actions 会依次执行：语法闸门 → 标签/版本一致性校验 → 同版本重复发布检测 → `npm publish`。
 
-发布认证（首次需要配置，二选一）：
+### 认证：Trusted Publishing (OIDC)，无需任何密钥
 
-- **推荐：npm Trusted Publishing (OIDC)** —— 在 npmjs.com 该包（或新建包）的 Settings → Trusted Publisher 里绑定
-  GitHub 仓库 `Wang993/DSH_OrganizeFilesInTheSameWorkspace` 与 workflow 文件名 `publish.yml`，之后无需任何密钥。
-- **备选：NPM_TOKEN** —— 在 npm 生成 Granular Access Token（含 publish 权限），加到仓库 Secrets 里命名为 `NPM_TOKEN`。
-  此时 workflow 会自动使用该 secret 发布。
+本包已在 npm 侧配置 **Trusted Publisher**（包页面 → Settings → Publishing access → Trusted Publisher）：
 
-> 首次发布前请确认 npm 上存在该包名或先在本地 `npm login && npm publish` 创建一次，
-> 之后即可切换到 OIDC 免密钥发布。
+| 字段 | 值 |
+| --- | --- |
+| Provider | GitHub Actions |
+| Organization or user | `Wang993` |
+| Repository | `DSH_OrganizeFilesInTheSameWorkspace` |
+| Workflow filename | `publish.yml` |
+| Environment name | （留空） |
+
+workflow 在有 `id-token: write` 且**未设置** `NPM_TOKEN` 时自动走 OIDC，因此 CI 里不需要任何长期密钥。
+从公开仓库经 OIDC 发布时，npm 还会**自动生成 provenance 证明**（无需 `--provenance` 参数）。
+
+### ⚠️ 已知坑：bypass-2FA token 不能直接发布
+
+npm 自 [2026-07-31](https://github.blog/changelog/2026-07-31-restricting-npm-bypass-2fa-granular-access-tokens/) 起收紧了两类凭据，配置时务必避开：
+
+- **勾选了 “Bypass 2FA” 的 Granular Access Token**：只能发到**暂存区**（staging），直接 `npm publish` 会报
+  `E403 ... E_STAGE_REQUIRED`；CI 里用它会失败。
+- 对新包而言，暂存流程还要求包已存在，所以**新包的首次发布必须用「可直达」的方式 bootstrap 一次**：
+  本地 `npm login --registry https://registry.npmjs.org` 后发布，或走 `npm stage publish` + `npm stage approve`
+  （后者需要维护者用 2FA 审批）。
+- 首次发布成功后，后续版本**全部交给 OIDC** 即可；仓库里不要再配 `NPM_TOKEN`，
+  否则 workflow 会退回 token 路径从而继续撞上 `E_STAGE_REQUIRED`。
+
+据此，本仓库的推荐配置是：**只保留 Trusted Publisher + 在包设置里勾选
+“Require two-factor authentication and disallow tokens”**，不需要任何 token secret。
+
 
 ## 卸载
 
