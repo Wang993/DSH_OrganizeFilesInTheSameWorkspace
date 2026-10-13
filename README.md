@@ -1,4 +1,4 @@
-# dsh-session-organizer
+# dsh-workspace-organizer
 
 > DSH（DeepSeek Harness）Web 端**会话整理**插件：标签分类 · 归档 / 恢复 · 已归档浏览。
 > Organize your DSH Web sessions: tag-based grouping, archive & restore, and an archived-session browser.
@@ -23,31 +23,43 @@ DSH 自带的工作区视图只能按「目录」分组、组内只能排序，�
 
 ## 安装
 
-### 方式一：从本仓库本地挂载（推荐）
+### 方式一：npm（已发布后最省事）
+
+```powershell
+dsh plugin --profile web add dsh-workspace-organizer
+```
+
+### 方式二：直接从 GitHub 安装（无需等待 npm 发布）
+
+```powershell
+dsh plugin --profile web add github:Wang993/DSH_OrganizeFilesInTheSameWorkspace
+```
+
+### 方式三：本地 clone + link（开发用）
 
 ```powershell
 git clone git@github.com:Wang993/DSH_OrganizeFilesInTheSameWorkspace.git
 dsh plugin --profile web add link:<克隆下来的目录绝对路径>
 ```
 
-### 方式二：手动编辑 profile
+### 方式四：手动编辑 profile
 
 编辑 `$DSH_HOME/profiles/web/package.json`：
 
 ```json
 {
-  "dsh": { "profile": { "bundles": ["...", "dsh-session-organizer"] } },
-  "dependencies": { "dsh-session-organizer": "link:./dsh-session-organizer" }
+  "dsh": { "profile": { "bundles": ["...", "dsh-workspace-organizer"] } },
+  "dependencies": { "dsh-workspace-organizer": "link:./dsh-workspace-organizer" }
 }
 ```
 
-把插件目录放到 `$DSH_HOME/profiles/web/dsh-session-organizer`，然后在该目录执行 `pnpm install`。
+把插件目录放到 `$DSH_HOME/profiles/web/dsh-workspace-organizer`，然后在该目录执行 `pnpm install`。
 
-安装后**重启 `dsh web`** 并刷新页面，即可看到菱形按钮。
+四种方式安装后都需要**重启 `dsh web`** 并刷新页面，即可看到菱形按钮。
 
 ## 使用
 
-1. 点击左下角（侧边栏设置区右侧）的**菱形按钮**打开「会话整理」面板。
+1. 点击侧边栏设置区右侧的**菱形按钮**打开「会话整理」面板。
 2. 点会话行的「标签」给它分类，再点顶部标签 chip 筛选。
 3. 点「归档」把不用的会话收起来；在「🗄 已归档」区点「恢复」可随时放回。
 4. 面板每 5 秒自动刷新（正在输入标签时不会打断）；也可以点「刷新」手动更新。
@@ -83,6 +95,31 @@ node --check lib/organizer.js   # 客户端脚本语法校验
 
 - 改 `lib/organizer.js`：**刷新页面**即生效（脚本每次请求都从磁盘实时读取，无需重启）。
 - 改 `lib/index.js`：需要**重启 `dsh web`**（宿主插件只在启动时加载）。
+
+## 发布（Release）
+
+本仓库自带 `.github/workflows/publish.yml`：**推送 `v*` 标签即自动发布到 npm**。
+
+1. 改 `package.json` 的 `version`（例如 `1.0.1`）；
+2. commit 并 push 到 `main`；
+3. 打标签并推送（标签必须与版本号一致，workflow 会强校验）：
+
+   ```powershell
+   git tag v1.0.1
+   git push origin v1.0.1
+   ```
+
+4. GitHub Actions 会依次执行：语法闸门 → 标签/版本一致性校验 → 同版本重复发布检测 → `npm publish`。
+
+发布认证（首次需要配置，二选一）：
+
+- **推荐：npm Trusted Publishing (OIDC)** —— 在 npmjs.com 该包（或新建包）的 Settings → Trusted Publisher 里绑定
+  GitHub 仓库 `Wang993/DSH_OrganizeFilesInTheSameWorkspace` 与 workflow 文件名 `publish.yml`，之后无需任何密钥。
+- **备选：NPM_TOKEN** —— 在 npm 生成 Granular Access Token（含 publish 权限），加到仓库 Secrets 里命名为 `NPM_TOKEN`。
+  此时 workflow 会自动使用该 secret 发布。
+
+> 首次发布前请确认 npm 上存在该包名或先在本地 `npm login && npm publish` 创建一次，
+> 之后即可切换到 OIDC 免密钥发布。
 
 ## 卸载
 
